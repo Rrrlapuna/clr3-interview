@@ -1,0 +1,42 @@
+specVersion: v0.1.0
+
+package:
+  name: my_project
+  version: v0.1.0
+  url: https://example.com/my_project
+  description: Solana transfer extraction Substreams module
+
+imports:
+  sol: https://spkg.io/streamingfast/solana-common-v0.4.0.spkg
+
+protobuf:
+  files:
+    - mydata.proto
+  importPaths:
+    - ./proto
+  excludePaths:
+    - sf/substreams/rpc
+    - sf/substreams/v1
+    - sf/substreams/sink
+    - sf/substreams/index
+    - sf/substreams/index/v1
+    - google
+
+binaries:
+  default:
+    type: wasm/rust-v1+wasm-bindgen-shims
+    file: ./target/wasm32-unknown-unknown/release/substreams.wasm
+
+modules:
+  - name: map_block
+    use: sol:blocks_without_votes
+    initialBlock: 385870151
+
+  - name: map_my_data
+    kind: map
+    inputs:
+      - map: map_block
+    output:
+      type: proto:mydata.v1.MyData
+
+network: solana-mainnet-beta

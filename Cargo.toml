@@ -1,0 +1,21 @@
+[package]
+name = "my_project"
+version = "0.0.1"
+edition = "2021"
+
+[lib]
+name = "substreams"
+crate-type = ["cdylib"]
+
+[dependencies]
+prost = "0.13"
+prost-types = "0.13"
+substreams = "0.7"
+substreams-solana = "0.14"
+bs58 = "0.4"
+hex = "0.4.3" 
+
+[profile.release]
+lto = true
+opt-level = 's'
+strip = "debuginfo"
