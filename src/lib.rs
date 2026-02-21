@@ -5,16 +5,20 @@ use pb::sf::solana::r#type::v1::{Block, ConfirmedTransaction};
 
 #[substreams::handlers::map]
 fn map_my_data(block: Block) -> pb::mydata::v1::MyData {
-    let output = pb::mydata::v1::MyData::default();
+    let mut output = pb::mydata::v1::MyData::default();
 
     for confirmed_tx in block.transactions.iter() {
-        extract_transfers(confirmed_tx);
+        extract_transfers(confirmed_tx, block.slot, &mut output);
     }
 
     output
 }
 
-fn extract_transfers(confirmed_tx: &ConfirmedTransaction) {
+fn extract_transfers(
+    confirmed_tx: &ConfirmedTransaction,
+    block_num: u64,
+    output: &mut pb::mydata::v1::MyData,
+) {
     let meta = match &confirmed_tx.meta {
         Some(meta) => meta,
         None => return,
@@ -35,7 +39,6 @@ fn extract_transfers(confirmed_tx: &ConfirmedTransaction) {
     };
 
     let account_keys = &message.account_keys;
-
     let pre_balances = &meta.pre_balances;
     let post_balances = &meta.post_balances;
 
@@ -69,12 +72,18 @@ fn extract_transfers(confirmed_tx: &ConfirmedTransaction) {
             let from = bs58::encode(from_bytes).into_string();
             let to = bs58::encode(to_bytes).into_string();
 
-            println!(
-                "{{\"from\": \"{}\", \"to\": \"{}\", \"amount\": {}}}",
+            let tx_id = match tx.signatures.get(0) {
+                Some(sig) => bs58::encode(sig).into_string(),
+                None => String::from(""),
+            };
+
+            output.transfers.push(pb::mydata::v1::Transfer {
                 from,
                 to,
-                amount
-            );
+                amount,
+                block_num,
+                tx_id,
+            });
         }
     }
 }
